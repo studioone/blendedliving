@@ -1,0 +1,56 @@
+<?php
+
+function twitter_autopost_help($path, $arg) {
+    switch ($path) {
+        case "admin/help#twitter_autopost":
+            return '<p>' . t("Twitter auto-post settings") . '</p>';
+            break;
+    }
+}
+
+function twitter_autopost_admin() {
+  $form = array();
+  $form['tap_postOnPartnerBlog'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Post twitter message on partner blog post publish'),
+      '#description' => t('Whether a twitter message is posted for a newly published partner blog post.'),
+      '#default_value' => variable_get('tap_postOnPartnerBlog',false)
+    );
+	
+  $form['tap_postOnFetchedBlog'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Post twitter message on blog post from feed import'),
+      '#description' => t('Whether a twitter message is posted for a freshly fetched feed blog post.'),
+      '#default_value' => variable_get('tap_postOnFetchedBlog',false)
+    );
+	$form['almafa'] = array(
+		'#markup' => '<div> NOTE: After disabled auto-tweeting, tweets about articles can still be sent from the article editor page!<br/>
+		The automatic tweet message can be edited on the trigger actions page <a href="/admin/config/system/actions/configure/70">here</a>.'
+	);
+  return system_settings_form($form);
+}
+
+function twitter_autopost_menu() {
+
+  $items = array();
+  $items['admin/config/services/twitter_autopost'] = array(
+    'title' => 'Twitter auto-post',
+    'description' => 'Switch twitter auto-post options on or off',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('twitter_autopost_admin'),
+    'access arguments' => array('administer twitter autopost'),
+   );
+
+  return $items;
+}
+
+function twitter_autopost_permission() {
+  return array(
+    'administer twitter autopost' => array(
+      'title' => t('Administer twitter auto-post'), 
+      'description' => t(''),
+    ),
+  );
+}
+
+?>

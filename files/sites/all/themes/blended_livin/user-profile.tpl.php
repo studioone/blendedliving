@@ -1,0 +1,163 @@
+		<div class="bio">
+		<div class="bio_top"></div>
+			<?php print render($user_profile['user_picture']); ?>
+			<?php print render($user_profile['field_name']); ?>
+			<hr />
+			<?php print render($user_profile['field_bio']); ?>
+		
+		<div class="bio_bottom"></div>
+		</div>
+		<?php 
+		$uid = $user_profile['field_name']['#object'] -> uid;
+		$items = array();
+		$result = db_query("SELECT n.nid FROM {node} n WHERE n.uid = :uid and n.type = :type", array(':uid' => $uid, ':type'=>'article'));
+		
+			//echo $res -> nid . "<br>" . $res -> title . "<br>";
+			
+			//print render($node);
+		?>
+			<div id="articles">
+				<h1 class="title">Latest Articles</h1>
+				<div class="line"></div>
+				<?php foreach($result as $res) : $node = node_load($res -> nid); ?>
+				<?php echo_array($node); ?>
+				<?php // foreach($nodes as $node): ?>
+				<?php /* ***************************** NODE ***************************************** */ ?>
+					<div class="article <?php print $classes; ?> id="node-<?php print $node->nid; ?>">	
+
+					<a href="<?php echo $node_url; ?>"><?php print render($node->body['field_image']); ?></a>
+					<div class="article_content">
+						<a href="<?php echo $node_url; ?>"><h1 class="article_title"><?php print $title; ?></h1></a>
+						<p class="meta">By <span class="author"><a href="/user/<?php echo $uid;?>"><?php print $name; ?></a></span> for <span class="idk"><?php print get_category_name($node, false);?>, March 18, 2012</span></p>
+						<p class="excerpt">
+						<?php print $node -> body['und'][0]['summary']; 
+						?>
+						</p>
+						<a href="<?php echo $node_url; ?>"><div class="more">more</div></a>
+						<div class="align_right">
+							<a href="#" class="comments">
+								<img src="<?php print base_path() . path_to_theme() .'/' ?>images/icon_comment.png" class="icon_comment"/>
+								
+								<span class="nr_comments"><?php echo ($node -> comment_count == 1) ? $node -> comment_count." Comment" : $node -> comment_count." Comments";?></span>
+							</a>
+							
+							<span class="date"><?php print format_date($created, 'custom', 'M. j. y.' ); ?></span>
+						</div>
+						
+					</div><!-- /article_content -->
+					<div class="line"></div>
+					
+					
+				</div> <!-- /article -->
+				<?php /* ******************************************** /NODE ********************************************* */ ?>
+				<?php endforeach; ?>
+			</div> <!-- /articles -->
+			<div class="partner_wrap">
+				<a href="#"><div class="partner_sign_up">PARTNER SIGN UP AD (728 X 90)</div></a>
+			</div>
+			
+			<div class="related_articles">
+				<h1>You Might Like</h1>
+				<div class="related_line"></div>
+				
+				<div id="related">
+				<ul>
+				<li>
+					<div class="box_wrap">
+						<div class="relbox">
+							<div class="image">
+								<img src="<?php print base_path() . path_to_theme() .'/' ?>images/faszi.png" />
+							</div>
+							<h2 class="related_a_title">LOREM IPSUM</h2>
+							<span>dolor sit amet, consectetur adipiscing elit</span>
+							
+						</div><!-- /box -->
+						<div class="bottom_shadow"></div>
+					</div><!-- /box_wrap  -- next box -> -->
+					
+					<div class="box_wrap">
+						<div class="relbox">
+							<div class="image">
+								<img src="<?php print base_path() . path_to_theme() .'/' ?>images/faszi.png" />
+							</div>
+							<h2 class="related_a_title">LOREM IPSUM</h2>
+							<span>dolor sit amet, consectetur adipiscing elit</span>
+							
+						</div><!-- /box -->
+						<div class="bottom_shadow"></div>
+					</div><!-- /box_wrap  -- next box -> -->
+					
+					<div class="box_wrap">
+						<div class="relbox">
+							<div class="image">
+								<img src="<?php print base_path() . path_to_theme() .'/' ?>images/faszi.png" />
+							</div>
+							<h2 class="related_a_title">LOREM IPSUM</h2>
+							<span>dolor sit amet, consectetur adipiscing elit</span>
+							
+						</div><!-- /box -->
+						<div class="bottom_shadow"></div>
+					</div><!-- /box_wrap  -- next box -> -->
+				</li>
+				
+				<li>
+					<div class="box_wrap">
+						<div class="relbox">
+							<div class="image">
+								<img src="<?php print base_path() . path_to_theme() .'/' ?>images/faszi.png" />
+							</div>
+							<h2 class="related_a_title">LOREM IPSUM</h2>
+							<span>dolor sit amet, consectetur adipiscing elit</span>
+							
+						</div><!-- /box -->
+						<div class="bottom_shadow"></div>
+					</div><!-- /box_wrap  -- next box -> -->
+					
+					<div class="box_wrap">
+						<div class="relbox">
+							<div class="image">
+								<img src="<?php print base_path() . path_to_theme() .'/' ?>images/faszi.png" />
+							</div>
+							<h2 class="related_a_title">LOREM IPSUM</h2>
+							<span>dolor sit amet, consectetur adipiscing elit</span>
+							
+						</div><!-- /box -->
+						<div class="bottom_shadow"></div>
+					</div><!-- /box_wrap  -- next box -> -->
+					
+					<div class="box_wrap">
+						<div class="relbox">
+							<div class="image">
+								<img src="<?php print base_path() . path_to_theme() .'/' ?>images/faszi.png" />
+							</div>
+							<h2 class="related_a_title">LOREM IPSUM</h2>
+							<span>dolor sit amet, consectetur adipiscing elit</span>
+							
+						</div><!-- /box -->
+						<div class="bottom_shadow"></div>
+					</div><!-- /box_wrap  -- next box -> -->
+				</li>
+				
+				</ul>
+				
+				</div><!-- /related -->
+				<div class="related_line"></div>
+			</div><!-- /related_articles -->
+			
+			<script type="text/javascript">
+			jQuery.noConflict();
+			jQuery(document).ready(function(){
+				jQuery("#related").easySlider({
+					auto: true,
+					continuous: true,
+					nextId: "next",
+					prevId: "prev",
+					prevText: "<div class='prev'></div>",
+					nextText: "<div class='next'></div>",
+					controlsBefore:	'<div class="controls">',
+					controlsAfter: '</div>',
+					pause:	5000,
+					speed: 1200
+				});
+			});	
+		</script>

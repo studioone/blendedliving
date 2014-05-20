@@ -1,0 +1,158 @@
+<?php
+/**
+ * @file
+ * Module file for menu_example.
+ */
+
+/**
+ * @defgroup menu_example Example: Menu
+ * @ingroup examples
+ * @{
+ * Demonstrates uses of the Menu APIs in Drupal.
+ *
+ * The Page Example module also talks about the menu system, as well
+ * as how to use menu arguments to generate pages.
+ *
+ * @see hook_menu()
+ * @see hook_menu_alter()
+ * @see hook_menu_link_alter()
+ * @see page_example
+ * @see page_example_menu()
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function author_page_menu() {
+
+  // A simple example which defines a page callback and a menu entry.
+
+  // Menu items are defined by placing them in an $items array. The array key
+  // (in this case 'menu_example') is the path that defines the menu router
+  // entry, so the page will be accessible from the URL
+  // example.com/menu_example.
+  $items['author/%author'] = array(
+    'type' => MENU_NORMAL_ITEM,
+
+    'title' => 'Author page',
+    'description' => '',
+    'page callback' => 'handle_author_page',
+
+    'page arguments' => array(1),
+
+    'access callback' => TRUE,
+
+  );
+  
+  return $items;
+
+}
+
+  // A menu router entry with no menu link. This could be used any time we
+  // don't want the user to see a link in the menu. Otherwise, it's the same
+  // as the "simplest" entry above. MENU_CALLBACK is used for all menu items
+  // which don't need a visible menu link, including services and other pages
+  // that may be linked to but are not intended to be accessed directly.
+
+
+function handle_author_page($content = NULL) {
+
+	$uid = arg(1);
+	$author = entity_load_single('field_collection_item', $uid);
+	if (!$author || $author->field_name != 'field_author') {
+		$text = 'Non-existent author';
+	} else {
+	$avatar = $author->field_photo['und'][0]['value'];
+	$name = $author->field_author_name['und'][0]['value'];
+	$bio = $author->field_bio['und'][0]['value'];
+	if (!empty($avatar)) {
+		$avatar = '<div class="user-picture"><img src="'.$avatar.'" width=130 alt="" /></div>';
+	}
+	
+	$text = <<<HTML
+	<div class="bio">
+		<div class="bio_top"></div>
+			{$avatar}
+			<div class="field-name-field-name">{$name}</div>
+			<hr />
+			<div class="field-name-field-bio">{$bio}</div>
+		
+		<div class="bio_bottom"></div>
+		</div>
+		
+HTML;
+	}
+		$author_field = field_info_field('field_author');
+	drupal_set_title('Author: '.$name);
+	$query = new EntityFieldQuery;
+        $query->entityCondition('entity_type', 'node');
+            $query->entityCondition('bundle', 'blog');
+            $query->fieldCondition($author_field, 'value', $uid, '=');
+			$query->fieldOrderBy('field_updated','value','DESC');
+			$query->range(NULL,3);
+        $results = $query->execute();
+		ob_start();
+		echo '<h1 class="title"> Latest Articles</h1>
+<div class="line"></div>';
+		foreach (reset($results) as $blog) {
+			$latest_article = node_load($blog->nid);
+			include 'article.php';
+		}
+		global $page;
+		print render(ads_block_view('ads_banner'));
+		?>
+		
+		
+		<div class="clearfix"></div>
+		<div class="related_articles">
+			<h1>You Might Like</h1>
+			<div class="related_line"></div>
+			<?php print you_might_like_section($author->item_id,'author'); ?>
+			<div class="related_line"></div>
+		</div><!-- /related_articles -->
+		<?php
+		
+		
+		$html = ob_get_contents();
+		ob_end_clean();
+	
+	return '<div>' . $text . '</div><br /><div>' .$html. '</div>';
+} 
+
+function author_page_page_alter(&$page) {
+}
+
+
+
+/**
+ * The special _load function to load menu_example.
+ *
+ * Given an integer $id, load the string that should be associated with it.
+ * Normally this load function would return an array or object with more
+ * information.
+ *
+ * @param $id
+ *   The integer to load.
+ *
+ * @return
+ *   A string loaded from the integer.
+ */
+function author_load($id) {
+  return NULL;
+}
+
+
+
+
+/**
+ * Title callback to rename the title dynamically, based on user_page_title().
+ *
+ * @param $account
+ *   User account related to the visited page.
+ */
+function author_page_user_page_title($account) {
+  var_dump($account);
+  return is_object($account) ? t("@name's account", array('@name' => format_username($account))) : '';
+}
+
+

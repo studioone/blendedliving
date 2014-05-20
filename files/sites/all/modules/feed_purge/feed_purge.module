@@ -1,0 +1,67 @@
+<?php
+
+function feed_purge_admin() {
+  $form = array();
+  $form['fp_confirm'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('I understand that this action deletes all feed-fetched articles, and it can not be undone.'),
+      '#description' => t('Warning: This operation might take a long time. It is recommended to put the site in maintanence mode for the duration.'),
+      '#default_value' => false
+    );
+  return system_settings_form($form);
+}
+
+function feed_purge_admin_validate($form, &$form_state) {
+  $confirm = $form_state['values']['fp_confirm'];
+  $node_type = 'blog';
+  if ($confirm) {
+ 
+    //fetch the nodes we want to delete
+    $msg  = ' Node IDs were: ';
+	$query = new EntityFieldQuery();
+	$query->entityCondition('entity_type', 'node');
+    $query->entityCondition('bundle', 'blog');
+    // $query->propertyCondition('status', 1);
+	$query->fieldCondition('field_uploaded', 'value', false);
+    $entities = reset($query->execute());
+	if (!$entities) {
+		drupal_set_message("No deletable nodes found.");
+		return;
+	}
+	$deleted_count = 0;
+	foreach ($entities as $row) {
+		node_delete($row->nid);
+		$msg .= $row->nid.', ';
+		$deleted_count++;
+	}
+	//simple debug message so we can see what had been deleted.
+	drupal_set_message("$deleted_count nodes have been deleted.".$msg);
+  } else {
+    drupal_set_message($confirm ?'EhRhMhAhGhEhRhDh' :"Nothing has been done.");
+  }
+}
+function feed_purge_menu() {
+
+  $items = array();
+
+  $items['admin/config/system/feed_purge'] = array(
+    'title' => 'Purge feed contents',
+    'description' => 'Delete all articles fetched from feeds',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('feed_purge_admin'),
+    'access arguments' => array('administer feed purge'),
+    // 'type' => MENU_NORMAL_ITEM,
+   );
+
+  return $items;
+}
+
+function feed_purge_permission() {
+  return array(
+    'administer feed purge' => array(
+      'title' => t('Administer feed purging'), 
+      'description' => t('Delete all feeds.'),
+    ),
+  );
+}
+?>

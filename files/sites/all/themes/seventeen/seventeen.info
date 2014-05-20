@@ -1,0 +1,24 @@
+name = Seventeen
+description = Seventeen administration theme.
+core = 7.x
+base theme = seven
+
+stylesheets[all][] = css/seventeen.css
+scripts[] = js/seventeen.js
+
+regions[content] = Content
+regions[help] = Help
+regions[page_top] = Page top
+regions[page_bottom] = Page bottom
+regions[sidebar_first] = First sidebar
+regions_hidden[] = sidebar_first
+
+features[] = logo
+features[] = favicon
+
+; Information added by drupal.org packaging script on 2012-12-20
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "seventeen"
+datestamp = "1355968494"
+

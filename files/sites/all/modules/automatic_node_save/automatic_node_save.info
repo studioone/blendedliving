@@ -1,0 +1,12 @@
+name = Automatic Node Save from Feeds
+description = A module to save automatically nodes imported from xml in cron
+package = Blended Living Extensions
+core = 7.x
+files[] = XmlFeed.php
+
+; Information added by drupal.org packaging script on 2012-05-26
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "blendedlivin"
+datestamp = "1337991209"
+

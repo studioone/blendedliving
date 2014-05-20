@@ -1,0 +1,90 @@
+<?php
+
+
+/**
+ * Implements hook_block_info().
+ *
+ * This hook declares what blocks are provided by the module.
+ */
+function ads_block_info() {
+  $blocks['ads_sidebar'] = array(
+    'info' => t('Advertisement: sidebar'),
+  );
+
+  $blocks['ads_banner'] = array(
+    'info' => t('Advertisement: banner'),
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_configure().
+ *
+ * This hook declares configuration options for blocks provided by this module.
+ */
+function ads_block_configure($delta = '') {
+  // The $delta parameter tells us which block is being configured.
+  // In this example, we'll allow the administrator to customize
+  // the text of the 'configurable text string' block defined in this module.
+
+  $form = array();
+  if ($delta == 'ads_sidebar' || $delta = 'ads_banner') {
+    // All we need to provide is the specific configuration options for our
+    // block. Drupal will take care of the standard block configuration options
+    // (block title, page visibility, etc.) and the save button.
+	$form['ads_url'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Ad target(URL)'),
+      '#size' => 255,
+      '#description' => t('This is display on click.'),
+      '#default_value' => variable_get($delta.'_url',  t('')),
+    );
+    $form['ads_image'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Image path'),
+      '#size' => 255,
+      '#description' => t('This image will appear.'),
+      '#default_value' => variable_get($delta.'_image',  t('')),
+    );
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_block_save().
+ *
+ * This hook declares how the configured options for a block
+ * provided by this module are saved.
+ */
+function ads_block_save($delta = '', $edit = array()) {
+  // We need to save settings from the configuration form.
+  // We need to check $delta to make sure we are saving the right block.
+  if ($delta == 'ads_sidebar' || $delta = 'ads_banner') {
+    // Have Drupal save the string to the database.
+    variable_set($delta.'_image', $edit['ads_image']);
+    variable_set($delta.'_url', $edit['ads_url']);
+  }
+  return;
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * This hook generates the contents of the blocks themselves.
+ */
+function ads_block_view($delta = '') {
+	$block['content'] = ads_contents($delta);
+	return $block;
+}
+
+/**
+ * A module-defined block content function.
+ */
+function ads_contents($which_block) {
+	$img = variable_get($which_block.'_image');
+	$url = variable_get($which_block.'_url');
+	return array('#markup' => '<div class="'.$which_block.'"><a href="'.$url.'" target="_blank"><img src="'.$img.'" alt="" /></a></div>');
+}
+
+
+?>

@@ -1,0 +1,200 @@
+<?php
+
+function automatic_node_save_help($path, $arg) {
+    switch ($path) {
+        case "admin/help#current_posts":
+            return '<p>' . t("Displays links to nodes created on this date") . '</p>';
+            break;
+    }
+}
+
+/* Check if node exist with the unique identifier, and if so, returns its id. Else returns -1 */
+
+function check_if_exists($unique) {
+    $qu = "SELECT * FROM {field_data_field_unique_identifier} f WHERE f.field_unique_identifier_value='" . $unique . "'";
+    $found_id = -1;
+    $result = db_query($qu);
+    foreach ($result as $r) {
+        $found_id = $r->entity_id;
+    }
+    return $found_id;
+}
+
+function get_node_update_date($id) {
+    $qu = "SELECT field_updated_value FROM {field_data_field_updated} f WHERE f.entity_id='" . $id . "'";
+    $updated = -1;
+    $result = db_query($qu);
+    foreach ($result as $r) {
+        $updated = $r->field_updated_value;
+    }
+    return $updated;
+}
+
+function return_author($feed_id,$blog, $name, $photo, $bio) {
+    $name_field = field_info_field('field_author_name');
+    $feed_field = field_info_field('field_feed_uid');
+	
+	$query = new EntityFieldQuery;
+        $query->entityCondition('entity_type', 'field_collection_item');
+            $query->entityCondition('bundle', 'field_author');
+            $query->fieldCondition('field_author_name', 'value', $name, '=');
+            $query->fieldCondition('field_feed_uid', 'value', $feed_id, '=');
+
+    $results = $query->execute();
+    // var_dump($results);
+	if (empty($results)) {
+		$authorValues = array('field_name'=> 'field_author');
+		$authorValues['field_author_name']['und'][0]['value'] = $name;
+		$authorValues['field_photo']['und'][0]['value'] = $photo;
+		$authorValues['field_bio']['und'][0]['value'] = $bio;
+		$authorValues['field_feed_uid']['und'][0]['value'] = $feed_id;
+		$authorEntity = entity_create('field_collection_item', $authorValues);
+		$authorEntity->setHostEntity('blog', $blog, LANGUAGE_NONE, true);
+		$success = entity_save('field_collection_item', $authorEntity);
+		$aid = $authorEntity->item_id;
+		$blog->field_author['und'][0]['value'] = $aid;
+        node_save($blog);
+		 watchdog('automatic_node_save', 'Added new author: %name (%id)', array('%name' => $name, '%id' => $aid), WATCHDOG_INFO);
+	} else {
+		
+		watchdog('automatic_node_save', 'Author exists: %a', array('%a' => print_r($results,true)), WATCHDOG_INFO);
+		$aid = reset($results['field_collection_item'])->item_id;
+		$blog->field_author['und'][0]['value'] = $aid;
+        node_save($blog);
+	}
+	return $aid;
+}
+
+
+function update_node_from_article($feed, $id, $node, $article) {
+    $node->title = $article->title;
+    $node->uid = 1;
+    $node->status = 1;
+    $node->comment = 2;
+    $node->moderate = 0;
+    $node->sticky = 0;
+    $node->body['und'][0] = array(
+        'value' => $article->text,
+        'format' => 'full_html');
+    $node->field_description[LANGUAGE_NONE][0]['value'] = substr($article->description,0,250);
+    $node->field_small_image[LANGUAGE_NONE][0]['value'] = $article->small_image;
+    $node->field_large_image[LANGUAGE_NONE][0]['value'] = $article->large_image;
+    $node->field_unique_identifier[LANGUAGE_NONE][0]['value'] = $id;
+    $node->field_sitename[LANGUAGE_NONE][0]['value'] = $feed->title;
+    $node->field_siteurl[LANGUAGE_NONE][0]['value'] = $feed->link;
+    $node->field_byline[LANGUAGE_NONE][0]['value'] = $article->byline;
+	if ($article->sponsor_unit) {
+		$node->field_sponsor_unit[LANGUAGE_NONE][0]['value'] = $article->sponsor_unit;
+	} else {
+		$node->field_sponsor_unit[LANGUAGE_NONE][0]['value'] = $feed->sponsor_unit;
+	}
+	
+	foreach ($article->labels as $label) {
+		$node->field_category[LANGUAGE_NONE][] = array('tid'=> $label);
+	}
+	
+    $node->log = 'Auto Imported Node';
+    $node->language = LANGUAGE_NONE;
+
+    // save node
+    $published = DateTime::createFromFormat('D, d M Y H:i:s e', $article->published);
+    $pd = (!$published) ? time() : $published->getTimestamp();
+    $updated = DateTime::createFromFormat('D, d M Y H:i:s e', $article->updated);
+    $ud = (!$updated) ? time() : $updated->getTimestamp();
+    $node->field_updated[LANGUAGE_NONE][0]['value'] = $ud;
+    $node->created = $pd;
+    $node->change = $ud;
+    $node->date = $pd;
+    return $node;
+}
+
+// Implementation of hook_cron
+function automatic_node_save_cron() {
+    require_once('XmlFeed.php');
+	$blog_feeds = variable_get('ans_feedurls','');
+	$blog_feeds = explode("\n",$blog_feeds);
+
+    foreach ($blog_feeds as $xml) :
+        $f = new XmlFeed(trim($xml));
+        $success = $f->process();
+        if (!$success) {
+            watchdog('automatic_node_save', 'Failed to load/parse feed: %feedurl', array('%feedurl' => $xml), WATCHDOG_ERROR);
+            continue;
+        }
+        $feed = $f->get_articles();
+
+        foreach ($feed as $key => $article) {
+            $id = check_if_exists($key);
+            if ($id != -1) {
+                $date = get_node_update_date($id);
+                $updated = DateTime::createFromFormat('D, d M Y H:i:s e', $article->updated);
+				if (!$updated) {
+					continue;
+				}
+                $ud = $updated->getTimestamp();
+                if ($date < $ud) {
+                    $node = node_load($id);
+                    $node = update_node_from_article($f,$key, $node, $article);
+					try {
+						node_save($node);
+					} catch (Exception $e) {
+						 watchdog('automatic_node_save', 'Exception during article save: %message (%title)', array('%message' => $e->getMessage(), '%title' => $f->title), WATCHDOG_WARNING);
+					}
+                } else {
+                    //echo "mar bennevan";
+                    continue;
+                }
+            } else {
+                $node = new stdClass();
+                $node->type = 'blog';
+                $node = update_node_from_article($f,$key, $node, $article);
+                try {
+					node_save($node);
+					$author = return_author($f->identifier,$node,$article->author_name, $article->author_image, $article->author_bio);
+				} catch (Exception $e) {
+					 watchdog('automatic_node_save', 'Exception during article save: %message (%title)', array('%message' => $e->getMessage(), '%title' => $f->title), WATCHDOG_WARNING);
+				}
+            }
+        }
+
+        watchdog('automatic_node_save', 'Feed import done for: %feedurl (%title)', array('%feedurl' => $xml, '%title' => $f->title), WATCHDOG_INFO);
+    endforeach;
+}
+
+function automatic_node_save_admin() {
+  $form = array();
+  $form['ans_feedurls'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Feed urls'),
+      '#size' => 255,
+      '#description' => t('Enter the feed urls, each on a new line.'),
+      '#default_value' => variable_get('ans_feedurls','')
+    );
+  return system_settings_form($form);
+}
+
+function automatic_node_save_menu() {
+
+  $items = array();
+
+  $items['admin/settings/automatic_node_save'] = array(
+    'title' => 'Partner site feeds',
+    'description' => 'Partner site feeds settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('automatic_node_save_admin'),
+    'access arguments' => array('administer users'),
+    'type' => MENU_CALLBACK,
+   );
+
+
+  $items['automatic_node_save'] = array(
+    'title' => 'Partner site feeds',
+    'description' => 'Partner site feeds settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('automatic_node_save_admin'),
+    'access arguments' => array('administer users'),
+    'type' => MENU_CALLBACK,
+   );
+
+  return $items;
+}

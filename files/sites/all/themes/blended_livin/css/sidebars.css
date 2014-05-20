@@ -1,0 +1,38 @@
+
+/* Fixed layout; standard sidebar placement */
+
+#page, #page-wrapper, .region-page-closure, body.no-sidebars #content {
+  width: 974px;
+}
+
+div.region-sidebar-first {
+  width: 200px;
+  margin-right: -200px;
+}
+
+div.region-sidebar-second {
+  width: 296px;
+  margin-left: 688px;
+  margin-right: -974px;
+}
+
+#content {
+  margin-right: -974px;
+}
+
+body.sidebar-first #content {
+  width: 774px;
+  margin-left: 200px;
+  margin-right: -974px;
+}
+
+body.sidebar-second #content {
+  width: 678px;
+  margin-right: -678px;
+}
+
+body.two-sidebars #content {
+  width: 478px;
+  margin-left: 200px;
+  margin-right: -678px;
+}

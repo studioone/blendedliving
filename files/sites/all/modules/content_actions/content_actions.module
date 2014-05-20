@@ -1,0 +1,25 @@
+<?php
+
+function content_actions_trigger_info() {
+   return array(
+     'node' => array(
+       'partner_post_uploaded' => array(
+         'label' => t('After a partner uploaded a post'),
+       ),
+     ));
+}
+
+function ca_trigger_upload($node) {
+  // watchdog('content_actions', 'NODE STUFF: %message% ', array('%message%' => print_r($node,true)), WATCHDOG_WARNING);
+  _trigger_node($node, 'partner_post_uploaded');
+}
+
+// function content_actions_help($path, $arg) {
+    // switch ($path) {
+        // case "admin/help#content_actions":
+            // return '<p>' . t("Dummy settings") . '</p>';
+            // break;
+    // }
+// }
+
+?>
